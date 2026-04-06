@@ -37,7 +37,7 @@ class Bug {
   deflate(dt) {
     this.deflated = true;
     this.width = Math.max(0.2, this.width - dt * 1.5);
-    const drain = dt * 8;
+    const drain = dt * 6; // 每秒消耗 6 体液（原 8）
     this.bodyFluid -= drain;
     if (this.bodyFluid <= 0) {
       this.bodyFluid = 0;
@@ -48,7 +48,7 @@ class Bug {
   inflate(dt) {
     this.deflated = false;
     this.width = Math.min(1.0, this.width + dt * 1.0);
-    const recover = dt * 8 * 0.7;
+    const recover = dt * 6 * 0.75; // 回收 75%（原 70%）
     this.bodyFluid = Math.min(100, this.bodyFluid + recover);
   }
 }
@@ -139,14 +139,14 @@ class GameEngine {
     this.prevSmoothCollisions = smoothCollisions;
 
     // 感情线逻辑
-    if (smoothCollisions > 3 && !this.connection) {
+    if (smoothCollisions > 2 && !this.connection) {
       this.connection = new ConnectionLine(this.bugA, this.bugB);
       if (this.onConnectionCreated) this.onConnectionCreated();
     }
     if (this.connection) {
       this.connection.points = collisionPoints;
       this.connection.update(harmonyData.harmonic, dt);
-      if (roughCollisions > smoothCollisions * 2 && this.connection.strength < 0.3) {
+      if (roughCollisions > smoothCollisions * 1.5 && this.connection.strength < 0.3) {
         this.connection.break();
         this.connection = null;
         if (this.onConnectionBroken) this.onConnectionBroken();

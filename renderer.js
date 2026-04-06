@@ -97,12 +97,26 @@ class Renderer {
     // 频谱填充（体内）
     this.drawSpectrumFill(bug, ctx);
 
-    // 瘤状物
+    // 瘤状物 + 粒子
     for (const m of bug.mutations) {
+      // 瘤本身
       ctx.beginPath();
       ctx.arc(m.x, bug.y, m.size * 15, 0, Math.PI * 2);
       ctx.fillStyle = '#4a3728';
       ctx.fill();
+
+      // 瘤周围的粒子
+      for (let p = 0; p < 3; p++) {
+        const angle = (this.time * 2 + p * 2.09) % (Math.PI * 2);
+        const dist = m.size * 18 + Math.sin(this.time * 4 + p) * 5;
+        const px = m.x + Math.cos(angle) * dist;
+        const py = bug.y + Math.sin(angle) * dist * 0.6;
+        const pSize = 1.5 + Math.sin(this.time * 3 + p * 1.5) * 0.8;
+        ctx.beginPath();
+        ctx.arc(px, py, pSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(180, 120, 80, ${0.4 + Math.sin(this.time * 2 + p) * 0.2})`;
+        ctx.fill();
+      }
     }
 
     ctx.restore();
