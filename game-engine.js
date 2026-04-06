@@ -92,6 +92,8 @@ class GameEngine {
     this.state = 'playing';
     this.roughnessMap = new Float32Array(64);
     this.prevSmoothCollisions = 0;
+    this.mutationTimer = 0; // 变异计时器
+    this.mutationInterval = 8; // 每 8 秒可能生成变异
     // 音效回调
     this.onConnectionCreated = null;
     this.onConnectionBroken = null;
@@ -104,6 +106,22 @@ class GameEngine {
   update(freqA, freqB, harmonyData, dt) {
     this.bugA.updateFromSpectrum(freqA, this.canvasWidth);
     this.bugB.updateFromSpectrum(freqB, this.canvasWidth);
+
+    // 变异生成系统
+    this.mutationTimer += dt;
+    if (this.mutationTimer >= this.mutationInterval) {
+      this.mutationTimer = 0;
+      // 30% 概率在随机虫上生成变异
+      if (Math.random() < 0.3) {
+        const targetBug = Math.random() < 0.5 ? this.bugA : this.bugB;
+        if (targetBug.mutations.length < 5) {
+          targetBug.mutations.push({
+            x: Math.random() * this.canvasWidth * 0.9 + this.canvasWidth * 0.05,
+            size: 0.3 + Math.random() * 0.7,
+          });
+        }
+      }
+    }
 
     let smoothCollisions = 0;
     let roughCollisions = 0;

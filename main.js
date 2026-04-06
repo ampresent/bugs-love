@@ -140,7 +140,7 @@
     }
 
     // 渲染
-    renderer.render(game, aiProfiles[aiDifficulty].name, harmony, elapsedTime);
+    renderer.render(game, aiProfiles[aiDifficulty].name, harmony, elapsedTime, freqDataA, freqDataB);
 
     requestAnimationFrame(loop);
   }

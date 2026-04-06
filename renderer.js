@@ -36,6 +36,25 @@ class Renderer {
     this.flashColor = color || '#ff6496';
   }
 
+  // 绘制两只虫之间的频谱波形
+  drawMidWaveform(freqA, freqB, bugA, bugB) {
+    if (!freqA || !freqB) return;
+    const ctx = this.ctx;
+    const midY = (bugA.y + bugB.y) / 2;
+    const len = Math.min(freqA.length, freqB.length, 64);
+    ctx.save();
+    ctx.globalAlpha = 0.25;
+    for (let i = 0; i < len; i++) {
+      const x = (i / len) * this.width;
+      const valA = freqA[i] / 255;
+      const valB = freqB[i] / 255;
+      const h = (valA + valB) * 15;
+      ctx.fillStyle = `hsl(${200 + i * 2}, 60%, 50%)`;
+      ctx.fillRect(x - 1, midY - h, 2, h * 2);
+    }
+    ctx.restore();
+  }
+
   // 绘制背景氛围粒子
   drawBackgroundParticles() {
     const ctx = this.ctx;
@@ -269,7 +288,7 @@ class Renderer {
   }
 
   // 绘制胜利/失败
-  drawEndState(state) {
+  drawEndState(state, elapsedTime, bugA, bugB) {
     const ctx = this.ctx;
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -278,20 +297,34 @@ class Renderer {
     ctx.font = '48px sans-serif';
     if (state === 'won') {
       ctx.fillStyle = '#ff6496';
-      ctx.fillText('新生命诞生', this.width / 2, this.height / 2);
+      ctx.fillText('新生命诞生', this.width / 2, this.height / 2 - 30);
       ctx.font = '20px sans-serif';
       ctx.fillStyle = '#aaa';
-      ctx.fillText('两颗心找到了共鸣的频率', this.width / 2, this.height / 2 + 40);
+      ctx.fillText('两颗心找到了共鸣的频率', this.width / 2, this.height / 2 + 10);
     } else {
       ctx.fillStyle = '#e94560';
-      ctx.fillText('枯萎', this.width / 2, this.height / 2);
+      ctx.fillText('枯萎', this.width / 2, this.height / 2 - 30);
       ctx.font = '20px sans-serif';
       ctx.fillStyle = '#aaa';
-      ctx.fillText('失去了连接的能力', this.width / 2, this.height / 2 + 40);
+      ctx.fillText('失去了连接的能力', this.width / 2, this.height / 2 + 10);
     }
+
+    // 结算分数
+    if (elapsedTime !== undefined && bugA && bugB) {
+      const mins = Math.floor(elapsedTime / 60);
+      const secs = Math.floor(elapsedTime % 60);
+      const fluidAvg = Math.round((bugA.bodyFluid + bugB.bodyFluid) / 2);
+      const score = state === 'won'
+        ? Math.round(1000 + fluidAvg * 5 - elapsedTime * 2)
+        : Math.round(elapsedTime * 10 + fluidAvg * 2);
+      ctx.font = '16px monospace';
+      ctx.fillStyle = '#ddd';
+      ctx.fillText(`用时: ${mins}:${secs.toString().padStart(2, '0')}  |  剩余体液: ${fluidAvg}%  |  评分: ${Math.max(0, score)}`, this.width / 2, this.height / 2 + 50);
+    }
+
     ctx.font = '16px sans-serif';
     ctx.fillStyle = '#888';
-    ctx.fillText('按 R 重新开始', this.width / 2, this.height / 2 + 80);
+    ctx.fillText('按 R 重新开始', this.width / 2, this.height / 2 + 85);
     ctx.restore();
   }
 
@@ -330,7 +363,7 @@ class Renderer {
   }
 
   // 主绘制
-  render(game, aiDifficultyName, harmony, elapsedTime) {
+  render(game, aiDifficultyName, harmony, elapsedTime, freqA, freqB) {
     this.time += 0.016;
 
     // 节拍脉冲衰减
@@ -341,6 +374,7 @@ class Renderer {
 
     this.clear(harmony);
     this.drawBackgroundParticles();
+    this.drawMidWaveform(freqA, freqB, game.bugA, game.bugB);
     this.drawBug(game.bugA, '#e94560', '#ff8a9e');
     this.drawBug(game.bugB, '#4fc3f7', '#80d8ff');
     this.drawConnection(game.connection);
@@ -359,7 +393,7 @@ class Renderer {
     }
 
     if (game.state !== 'playing') {
-      this.drawEndState(game.state);
+      this.drawEndState(game.state, elapsedTime, game.bugA, game.bugB);
     }
   }
 }
