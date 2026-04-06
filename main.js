@@ -13,6 +13,8 @@
   let running = false;
   let spaceHeld = false;
   let aiDifficulty = 1; // 0=温柔, 1=平衡, 2=挑战
+  let startTime = 0; // 对局开始时间
+  let elapsedTime = 0; // 对局已用时间
   const aiProfiles = [
     { name: '温柔', conflictThreshold: 0.4, filterLow: 1200, filterHigh: 3500 },
     { name: '平衡', conflictThreshold: 0.3, filterLow: 800, filterHigh: 3000 },
@@ -27,6 +29,7 @@
     startBtn.classList.add('hidden');
     instructions.classList.remove('hidden');
     running = true;
+    startTime = performance.now();
 
     // 音效回调绑定
     game.onConnectionCreated = () => { audio.playChordArpeggio(); if (renderer) renderer.triggerFlash('#ff6496'); };
@@ -94,6 +97,11 @@
     const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // cap dt
     lastTime = timestamp;
 
+    // 计时
+    if (game.state === 'playing') {
+      elapsedTime = (performance.now() - startTime) / 1000;
+    }
+
     // 玩家操作
     if (spaceHeld) {
       game.bugA.deflate(dt);
@@ -132,7 +140,7 @@
     }
 
     // 渲染
-    renderer.render(game, aiProfiles[aiDifficulty].name);
+    renderer.render(game, aiProfiles[aiDifficulty].name, harmony, elapsedTime);
 
     requestAnimationFrame(loop);
   }

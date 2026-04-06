@@ -9,6 +9,7 @@ class Renderer {
     this.beatPulse = 0; // 0-1 脉冲强度
     this.flashAlpha = 0; // 连接闪光
     this.flashColor = '#ff6496';
+    this.bgHue = 240; // 背景色相（动态变化）
     // 背景粒子
     this.particles = [];
     for (let i = 0; i < 40; i++) {
@@ -55,8 +56,12 @@ class Renderer {
     }
   }
 
-  clear() {
-    this.ctx.fillStyle = '#1a1a2e';
+  clear(harmony) {
+    // 动态背景：和谐=暖紫，冲突=冷蓝
+    if (harmony) {
+      this.bgHue += ((280 * harmony.harmonic + 220 * harmony.conflict) - this.bgHue) * 0.02;
+    }
+    this.ctx.fillStyle = `hsl(${this.bgHue}, 30%, 10%)`;
     this.ctx.fillRect(0, 0, this.width, this.height);
   }
 
@@ -152,7 +157,49 @@ class Renderer {
       }
     }
 
+    // 眼睛
+    this.drawBugEyes(bug, ctx);
+
     ctx.restore();
+  }
+
+  // 绘制虫的眼睛
+  drawBugEyes(bug, ctx) {
+    const frontX = this.width * 0.05;
+    const eyeSize = 4;
+    const y = bug.y;
+    const spread = 8 * bug.width;
+
+    // 眼白
+    ctx.beginPath();
+    ctx.arc(frontX, y - spread, eyeSize, 0, Math.PI * 2);
+    ctx.arc(frontX, y + spread, eyeSize, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff';
+    ctx.fill();
+
+    // 瞳孔
+    const pupilSize = 2 + bug.width * 2;
+    ctx.beginPath();
+    ctx.arc(frontX + 1, y - spread, pupilSize, 0, Math.PI * 2);
+    ctx.arc(frontX + 1, y + spread, pupilSize, 0, Math.PI * 2);
+    ctx.fillStyle = '#111';
+    ctx.fill();
+
+    // 疲惫表情（体液低时）
+    if (bug.bodyFluid < 30) {
+      ctx.save();
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(frontX - 4, y - spread - 6);
+      ctx.lineTo(frontX + 4, y - spread - 4);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(frontX - 4, y + spread + 4);
+      ctx.lineTo(frontX + 4, y + spread + 6);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   drawSpectrumFill(bug, ctx) {
@@ -248,6 +295,21 @@ class Renderer {
     ctx.restore();
   }
 
+  // 绘制计时器
+  drawTimer(seconds) {
+    if (seconds === undefined || seconds === null) return;
+    const ctx = this.ctx;
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    const timeStr = `${mins}:${secs.toString().padStart(2, '0')}`;
+    ctx.save();
+    ctx.fillStyle = '#888';
+    ctx.font = '14px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(timeStr, this.width / 2, 20);
+    ctx.restore();
+  }
+
   // 绘制操作提示
   drawControlsHint(difficulty) {
     const ctx = this.ctx;
@@ -268,7 +330,7 @@ class Renderer {
   }
 
   // 主绘制
-  render(game, aiDifficultyName) {
+  render(game, aiDifficultyName, harmony, elapsedTime) {
     this.time += 0.016;
 
     // 节拍脉冲衰减
@@ -277,13 +339,14 @@ class Renderer {
     // 闪光衰减
     this.flashAlpha = Math.max(0, this.flashAlpha - 0.03);
 
-    this.clear();
+    this.clear(harmony);
     this.drawBackgroundParticles();
     this.drawBug(game.bugA, '#e94560', '#ff8a9e');
     this.drawBug(game.bugB, '#4fc3f7', '#80d8ff');
     this.drawConnection(game.connection);
     this.drawFluidBar(game.bugA, 20, 30);
     this.drawFluidBar(game.bugB, this.width - 140, 30);
+    this.drawTimer(elapsedTime);
     this.drawControlsHint(aiDifficultyName);
 
     // 连接闪光效果
