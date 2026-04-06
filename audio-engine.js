@@ -104,4 +104,107 @@ class AudioEngine {
       this.bugB.osc.frequency.setTargetAtTime(noteB, this.ctx.currentTime, 0.1);
     }
   }
+
+  // === 音效反馈系统 ===
+
+  // 播放和弦琶音（感情线建立）
+  playChordArpeggio() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const notes = [261.63, 329.63, 392.00]; // C-E-G
+    notes.forEach((freq, i) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, now + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.15, now + i * 0.08 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.6);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now + i * 0.08);
+      osc.stop(now + i * 0.08 + 0.7);
+    });
+  }
+
+  // 播放不和谐音（感情线断裂）
+  playDissonance() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    // 增四度 C-F#
+    [261.63, 369.99].forEach((freq) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 2000;
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  }
+
+  // 播放胜利音效（持续大三和弦）
+  playVictory() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const chord = [261.63, 329.63, 392.00, 523.25]; // C-E-G-C
+    chord.forEach((freq) => {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, now);
+      gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+      gain.gain.setValueAtTime(0.1, now + 1.5);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 3.0);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 3.1);
+    });
+  }
+
+  // 播放失败音效（低沉衰减）
+  playDefeat() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(200, now);
+    osc.frequency.exponentialRampToValueAtTime(60, now + 1.5);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 800;
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 1.6);
+  }
+
+  // 播放碰撞音效（短促提示）
+  playCollision(smooth) {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    osc.type = smooth ? 'sine' : 'square';
+    osc.frequency.value = smooth ? 440 : 220;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.05, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
 }

@@ -91,6 +91,14 @@ class GameEngine {
     this.connection = null;
     this.state = 'playing';
     this.roughnessMap = new Float32Array(64);
+    this.prevSmoothCollisions = 0;
+    // 音效回调
+    this.onConnectionCreated = null;
+    this.onConnectionBroken = null;
+    this.onWon = null;
+    this.onLost = null;
+    this.onCollision = null;
+    this._stateChanged = false;
   }
 
   update(freqA, freqB, harmonyData, dt) {
@@ -122,8 +130,18 @@ class GameEngine {
       }
     }
 
+    // 碰撞音效（节流：每隔几帧才触发）
+    if (smoothCollisions > 0 && smoothCollisions !== this.prevSmoothCollisions) {
+      if (this.onCollision) this.onCollision(true);
+    } else if (roughCollisions > 0) {
+      if (this.onCollision) this.onCollision(false);
+    }
+    this.prevSmoothCollisions = smoothCollisions;
+
+    // 感情线逻辑
     if (smoothCollisions > 3 && !this.connection) {
       this.connection = new ConnectionLine(this.bugA, this.bugB);
+      if (this.onConnectionCreated) this.onConnectionCreated();
     }
     if (this.connection) {
       this.connection.points = collisionPoints;
@@ -131,18 +149,22 @@ class GameEngine {
       if (roughCollisions > smoothCollisions * 2 && this.connection.strength < 0.3) {
         this.connection.break();
         this.connection = null;
+        if (this.onConnectionBroken) this.onConnectionBroken();
       }
-      if (this.connection && this.connection.isComplete()) {
+      if (this.connection && this.connection.isComplete() && this.state === 'playing') {
         this.state = 'won';
+        if (this.onWon) this.onWon();
       }
     }
 
-    if (!this.bugA.alive || !this.bugB.alive) {
+    if ((!this.bugA.alive || !this.bugB.alive) && this.state === 'playing') {
       this.state = 'lost';
+      if (this.onLost) this.onLost();
     }
     const roughRatio = this.roughnessMap.reduce((a, b) => a + b, 0) / 64;
-    if (roughRatio > 0.8 && (!this.connection || this.connection.broken)) {
+    if (roughRatio > 0.8 && (!this.connection || this.connection.broken) && this.state === 'playing') {
       this.state = 'lost';
+      if (this.onLost) this.onLost();
     }
   }
 }

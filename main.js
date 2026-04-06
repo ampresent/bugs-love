@@ -21,6 +21,14 @@
     startBtn.classList.add('hidden');
     instructions.classList.remove('hidden');
     running = true;
+
+    // 音效回调绑定
+    game.onConnectionCreated = () => audio.playChordArpeggio();
+    game.onConnectionBroken = () => audio.playDissonance();
+    game.onWon = () => audio.playVictory();
+    game.onLost = () => audio.playDefeat();
+    game.onCollision = (smooth) => audio.playCollision(smooth);
+
     requestAnimationFrame(loop);
   });
 
@@ -46,6 +54,12 @@
       }
       audio.init();
       game = new GameEngine(canvas.width, canvas.height);
+      // 重新绑定音效回调
+      game.onConnectionCreated = () => audio.playChordArpeggio();
+      game.onConnectionBroken = () => audio.playDissonance();
+      game.onWon = () => audio.playVictory();
+      game.onLost = () => audio.playDefeat();
+      game.onCollision = (smooth) => audio.playCollision(smooth);
     }
   });
 
