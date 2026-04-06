@@ -6,6 +6,20 @@ class Renderer {
     this.width = canvas.width;
     this.height = canvas.height;
     this.time = 0;
+    this.beatPulse = 0; // 0-1 脉冲强度
+    this.flashAlpha = 0; // 连接闪光
+    this.flashColor = '#ff6496';
+  }
+
+  // 触发节拍脉冲
+  triggerBeatPulse() {
+    this.beatPulse = 1;
+  }
+
+  // 触发闪光
+  triggerFlash(color) {
+    this.flashAlpha = 0.6;
+    this.flashColor = color || '#ff6496';
   }
 
   clear() {
@@ -18,6 +32,9 @@ class Renderer {
     const ctx = this.ctx;
     if (!bug.segments.length) return;
 
+    // 节拍脉冲放大
+    const pulseScale = 1 + this.beatPulse * 0.05;
+
     ctx.save();
 
     // 虫身体轮廓
@@ -26,7 +43,7 @@ class Renderer {
 
     for (let i = 0; i < bug.segments.length; i++) {
       const seg = bug.segments[i];
-      const amp = seg.amplitude * 50 * bug.width;
+      const amp = seg.amplitude * 50 * bug.width * pulseScale;
       const roughness = 1 - seg.smoothness;
 
       // 上半部分
@@ -37,7 +54,7 @@ class Renderer {
       } else {
         // 光滑：贝塞尔
         const nextSeg = bug.segments[Math.min(i + 1, bug.segments.length - 1)];
-        const nextAmp = nextSeg.amplitude * 50 * bug.width;
+        const nextAmp = nextSeg.amplitude * 50 * bug.width * pulseScale;
         const cpx = (seg.x + nextSeg.x) / 2;
         ctx.quadraticCurveTo(cpx, bug.y - amp, nextSeg.x, bug.y - nextAmp);
       }
@@ -46,14 +63,14 @@ class Renderer {
     // 下半部分（镜像）
     for (let i = bug.segments.length - 1; i >= 0; i--) {
       const seg = bug.segments[i];
-      const amp = seg.amplitude * 50 * bug.width;
+      const amp = seg.amplitude * 50 * bug.width * pulseScale;
       const roughness = 1 - seg.smoothness;
       if (roughness > 0.4) {
         const jitter = roughness * 8 * Math.cos(i * 5 + this.time * 2);
         ctx.lineTo(seg.x, bug.y + amp + jitter);
       } else {
         const prevSeg = bug.segments[Math.max(i - 1, 0)];
-        const prevAmp = prevSeg.amplitude * 50 * bug.width;
+        const prevAmp = prevSeg.amplitude * 50 * bug.width * pulseScale;
         const cpx = (seg.x + prevSeg.x) / 2;
         ctx.quadraticCurveTo(cpx, bug.y + amp, prevSeg.x, bug.y + prevAmp);
       }
@@ -109,11 +126,17 @@ class Renderer {
     const alpha = line.strength;
     const width = 1 + line.strength * 5;
 
+    // 颜色渐变：粉色 (弱) → 金色 (强)
+    const r = Math.round(255);
+    const g = Math.round(100 + line.strength * 120); // 100→220
+    const b = Math.round(150 - line.strength * 100); // 150→50
+    const lineColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+
     ctx.save();
-    ctx.strokeStyle = `rgba(255, 100, 150, ${alpha})`;
+    ctx.strokeStyle = lineColor;
     ctx.lineWidth = width;
-    ctx.shadowColor = '#ff6496';
-    ctx.shadowBlur = 8 + line.strength * 12;
+    ctx.shadowColor = line.strength > 0.7 ? '#ffd700' : '#ff6496';
+    ctx.shadowBlur = 8 + line.strength * 15;
 
     for (const pt of line.points) {
       ctx.beginPath();
@@ -192,6 +215,13 @@ class Renderer {
   // 主绘制
   render(game) {
     this.time += 0.016;
+
+    // 节拍脉冲衰减
+    this.beatPulse = Math.max(0, this.beatPulse - 0.05);
+
+    // 闪光衰减
+    this.flashAlpha = Math.max(0, this.flashAlpha - 0.03);
+
     this.clear();
     this.drawBug(game.bugA, '#e94560', '#ff8a9e');
     this.drawBug(game.bugB, '#4fc3f7', '#80d8ff');
@@ -199,6 +229,16 @@ class Renderer {
     this.drawFluidBar(game.bugA, 20, 30);
     this.drawFluidBar(game.bugB, this.width - 140, 30);
     this.drawControlsHint();
+
+    // 连接闪光效果
+    if (this.flashAlpha > 0) {
+      this.ctx.save();
+      this.ctx.fillStyle = this.flashColor;
+      this.ctx.globalAlpha = this.flashAlpha;
+      this.ctx.fillRect(0, 0, this.width, this.height);
+      this.ctx.restore();
+    }
+
     if (game.state !== 'playing') {
       this.drawEndState(game.state);
     }

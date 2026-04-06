@@ -4,12 +4,23 @@
 
 ---
 
-## Round 1 — 2026-04-06 13:48
+## Round 1 — 2026-04-06 13:48 ✅
+
+### 做了什么
+- audio-engine.js: 添加 5 个音效方法（playChordArpeggio / playDissonance / playVictory / playDefeat / playCollision）
+- game-engine.js: 添加 onConnectionCreated / onConnectionBroken / onWon / onLost / onCollision 回调
+- main.js: 绑定回调到音频引擎
+- 已 push: `feat: sound effects — chord arpeggio, dissonance, victory/defeat, collision feedback`
+
+### 接下来
+Round 2: 视觉增强 — 节拍脉冲、感情线颜色渐变（粉→金）、碰撞闪光
+
+---
+
+## Round 2 — 2026-04-06 13:51
 
 ### 本轮目标
-实现音效反馈系统：感情线建立/断裂/胜利时的听觉反馈。
-
-### 计划
-- audio-engine.js: 添加 playChord()、playDissonance()、playVictory() 方法
-- game-engine.js: 在 connection 创建和断裂时触发音效
-- main.js: 胜利时触发胜利音效
+视觉增强：
+1. 节拍脉冲 — 每拍虫体短暂放大 5% 再恢复
+2. 感情线颜色渐变 — 弱=粉色，强=金色
+3. 连接建立时闪光效果

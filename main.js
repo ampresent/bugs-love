@@ -23,10 +23,10 @@
     running = true;
 
     // 音效回调绑定
-    game.onConnectionCreated = () => audio.playChordArpeggio();
-    game.onConnectionBroken = () => audio.playDissonance();
-    game.onWon = () => audio.playVictory();
-    game.onLost = () => audio.playDefeat();
+    game.onConnectionCreated = () => { audio.playChordArpeggio(); if (renderer) renderer.triggerFlash('#ff6496'); };
+    game.onConnectionBroken = () => { audio.playDissonance(); if (renderer) renderer.triggerFlash('#e94560'); };
+    game.onWon = () => { audio.playVictory(); if (renderer) renderer.triggerFlash('#ffd700'); };
+    game.onLost = () => { audio.playDefeat(); if (renderer) renderer.triggerFlash('#4a3728'); };
     game.onCollision = (smooth) => audio.playCollision(smooth);
 
     requestAnimationFrame(loop);
@@ -55,10 +55,10 @@
       audio.init();
       game = new GameEngine(canvas.width, canvas.height);
       // 重新绑定音效回调
-      game.onConnectionCreated = () => audio.playChordArpeggio();
-      game.onConnectionBroken = () => audio.playDissonance();
-      game.onWon = () => audio.playVictory();
-      game.onLost = () => audio.playDefeat();
+      game.onConnectionCreated = () => { audio.playChordArpeggio(); if (renderer) renderer.triggerFlash('#ff6496'); };
+      game.onConnectionBroken = () => { audio.playDissonance(); if (renderer) renderer.triggerFlash('#e94560'); };
+      game.onWon = () => { audio.playVictory(); if (renderer) renderer.triggerFlash('#ffd700'); };
+      game.onLost = () => { audio.playDefeat(); if (renderer) renderer.triggerFlash('#4a3728'); };
       game.onCollision = (smooth) => audio.playCollision(smooth);
     }
   });
@@ -93,7 +93,12 @@
 
     // 旋律更新
     if (audio.ctx) {
+      const wasOnBeat = audio.isOnBeat(audio.ctx.currentTime);
       audio.updateMelody(audio.ctx.currentTime);
+      // 节拍脉冲
+      if (wasOnBeat && renderer) {
+        renderer.triggerBeatPulse();
+      }
     }
 
     // 游戏逻辑更新
