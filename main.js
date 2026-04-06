@@ -12,6 +12,12 @@
   let renderer = null;
   let running = false;
   let spaceHeld = false;
+  let aiDifficulty = 1; // 0=温柔, 1=平衡, 2=挑战
+  const aiProfiles = [
+    { name: '温柔', conflictThreshold: 0.4, filterLow: 1200, filterHigh: 3500 },
+    { name: '平衡', conflictThreshold: 0.3, filterLow: 800, filterHigh: 3000 },
+    { name: '挑战', conflictThreshold: 0.15, filterLow: 500, filterHigh: 2500 },
+  ];
 
   startBtn.addEventListener('click', () => {
     audio = new AudioEngine();
@@ -45,6 +51,18 @@
     }
   });
 
+  // 移动端触摸支持
+  canvas.addEventListener('touchstart', (e) => { e.preventDefault(); spaceHeld = true; }, { passive: false });
+  canvas.addEventListener('touchend', (e) => { e.preventDefault(); spaceHeld = false; }, { passive: false });
+  canvas.addEventListener('touchcancel', () => { spaceHeld = false; });
+
+  // 切换 AI 难度 (D 键)
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'KeyD' && game && game.state === 'playing') {
+      aiDifficulty = (aiDifficulty + 1) % aiProfiles.length;
+    }
+  });
+
   // 重新开始
   document.addEventListener('keydown', (e) => {
     if (e.code === 'KeyR' && game && game.state !== 'playing') {
@@ -62,6 +80,12 @@
       game.onCollision = (smooth) => audio.playCollision(smooth);
     }
   });
+
+  // 移动端检测
+  const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  if (isMobile) {
+    instructions.textContent = '触摸屏幕 = 瘪 | 松开 = 胀';
+  }
 
   let lastTime = 0;
 
@@ -84,11 +108,12 @@
     const freqDataB = audio.getFrequencyData(audio.bugB);
     const harmony = audio.computeHarmony(freqDataA, freqDataB);
 
-    // AI 逻辑：冲突多时降低自己的滤波
-    if (harmony.conflict > 0.3) {
-      audio.setAIFilter(800);
+    // AI 逻辑：根据难度档位调整
+    const profile = aiProfiles[aiDifficulty];
+    if (harmony.conflict > profile.conflictThreshold) {
+      audio.setAIFilter(profile.filterLow);
     } else {
-      audio.setAIFilter(3000);
+      audio.setAIFilter(profile.filterHigh);
     }
 
     // 旋律更新
@@ -107,7 +132,7 @@
     }
 
     // 渲染
-    renderer.render(game);
+    renderer.render(game, aiProfiles[aiDifficulty].name);
 
     requestAnimationFrame(loop);
   }

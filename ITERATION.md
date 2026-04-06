@@ -1,20 +1,15 @@
 # 迭代日志 — 爱情虫 (Bugs Love)
 
-每轮记录：做了什么、接下来做什么。每轮 commit + push。
-
 ---
 
-## Round 1 — 2026-04-06 13:48 ✅
-- 音效反馈系统（5 个音效方法 + 回调绑定）
-- Push: `feat: sound effects — chord arpeggio, dissonance, victory/defeat, collision feedback`
+## Round 1 ✅ 音效反馈
+## Round 2 ✅ 视觉增强
+## Round 3 ✅ 参数调优 + 粒子 + README
 
-## Round 2 — 2026-04-06 13:51 ✅
-- 视觉增强：节拍脉冲、感情线颜色渐变（粉→金）、连接闪光
-- Push: `feat: visual enhancements — beat pulse, connection color gradient pink→gold, flash effects`
-
-## Round 3 — 2026-04-06 13:55
+## Round 4 — 2026-04-06 13:58
 
 ### 本轮目标
-1. 参数调优 — 降低感情线建立门槛，调整体液消耗
-2. 瘤出现时的粒子效果
-3. README 文档
+扩展功能：
+1. 移动端触摸支持 — 触摸屏幕瘪，松开胀
+2. 背景氛围粒子 — 漂浮的光点营造氛围
+3. AI 难度档位 — 3 种 AI 策略（温柔/平衡/挑战）

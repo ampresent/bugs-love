@@ -9,6 +9,19 @@ class Renderer {
     this.beatPulse = 0; // 0-1 脉冲强度
     this.flashAlpha = 0; // 连接闪光
     this.flashColor = '#ff6496';
+    // 背景粒子
+    this.particles = [];
+    for (let i = 0; i < 40; i++) {
+      this.particles.push({
+        x: Math.random() * 2000,
+        y: Math.random() * 1200,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.2,
+        size: 1 + Math.random() * 2,
+        alpha: 0.1 + Math.random() * 0.3,
+        hue: Math.random() * 60 + 200, // 蓝紫色系
+      });
+    }
   }
 
   // 触发节拍脉冲
@@ -20,6 +33,26 @@ class Renderer {
   triggerFlash(color) {
     this.flashAlpha = 0.6;
     this.flashColor = color || '#ff6496';
+  }
+
+  // 绘制背景氛围粒子
+  drawBackgroundParticles() {
+    const ctx = this.ctx;
+    for (const p of this.particles) {
+      // 移动
+      p.x += p.vx;
+      p.y += p.vy;
+      // 边界回绕
+      if (p.x < -10) p.x = this.width + 10;
+      if (p.x > this.width + 10) p.x = -10;
+      if (p.y < -10) p.y = this.height + 10;
+      if (p.y > this.height + 10) p.y = -10;
+
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${p.hue}, 50%, 70%, ${p.alpha * (0.7 + Math.sin(this.time + p.x * 0.01) * 0.3)})`;
+      ctx.fill();
+    }
   }
 
   clear() {
@@ -216,18 +249,26 @@ class Renderer {
   }
 
   // 绘制操作提示
-  drawControlsHint() {
+  drawControlsHint(difficulty) {
     const ctx = this.ctx;
     ctx.save();
     ctx.fillStyle = '#666';
     ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('按住 空格 = 瘪（掏空自己） | 松开 = 胀（恢复饱满）', this.width / 2, this.height - 12);
+    const hint = 'ontouchstart' in window
+      ? '触摸屏幕 = 瘪 | 松开 = 胀'
+      : '按住 空格 = 瘪（掏空自己） | 松开 = 胀（恢复饱满）';
+    ctx.fillText(hint, this.width / 2, this.height - 12);
+    if (difficulty) {
+      ctx.fillStyle = '#888';
+      ctx.font = '12px sans-serif';
+      ctx.fillText(`AI: ${difficulty} [D切换]`, this.width / 2, this.height - 30);
+    }
     ctx.restore();
   }
 
   // 主绘制
-  render(game) {
+  render(game, aiDifficultyName) {
     this.time += 0.016;
 
     // 节拍脉冲衰减
@@ -237,12 +278,13 @@ class Renderer {
     this.flashAlpha = Math.max(0, this.flashAlpha - 0.03);
 
     this.clear();
+    this.drawBackgroundParticles();
     this.drawBug(game.bugA, '#e94560', '#ff8a9e');
     this.drawBug(game.bugB, '#4fc3f7', '#80d8ff');
     this.drawConnection(game.connection);
     this.drawFluidBar(game.bugA, 20, 30);
     this.drawFluidBar(game.bugB, this.width - 140, 30);
-    this.drawControlsHint();
+    this.drawControlsHint(aiDifficultyName);
 
     // 连接闪光效果
     if (this.flashAlpha > 0) {
